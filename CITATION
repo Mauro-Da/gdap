@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use GDAP in your work, please cite using this metadata."
+title: "General Declaration for AI Principles (GDAP)"
+version: "0.1.3"
+authors:
+  - family-names: "Danieletti"
+    given-names: "Mauro"
+date-released: "2025-11-02"
+url: "https://github.com/mauro-da/gdap"
+doi: "10.5281/zenodo.17504334"
