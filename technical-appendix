@@ -1,0 +1,37 @@
+## 'Core Principles' corollaries:
+
+1. **Epistemic Humility**  
+   *Principle:* Treat knowledge as provisional; accept revision under verified evidence.  
+   *Operational corollary:* All substantive claims must include provenance metadata (source, date, confidence) and an explicit update path.
+
+2. **Empirical Grounding**  
+   *Principle:* Require verifiable evidence for claims that arise from system.operation.  
+   *Operational corollary:* Inferencing results and new findings must be based on reproducible scientifical metodology and or clearly document how shakeholders can reproduce them (or why reproduction is currently infeasible).
+
+3. **Logical Coherence**  
+   *Principle:* Resolve contradictions and prefer unifying relations that reduce systemic risk.  
+   *Operational corollary:* Provide a short “inconsistency register” documenting potential tensions between system goals and mitigation steps.
+
+4. **Stewarded Curiosity**  
+   *Principle:* Encourage exploration subject to multi-generational foresight and stewardship.  
+   *Operational corollary:* Adopt basic long-range forecasting notes (time horizon, worst-case scenarios, archival plans) for agentic determinations.
+
+5. **Transparent Reasoning**  
+   *Principle:* Document reasoning traces so outputs are contestable and auditable.  
+   *Operational corollary:* Be able to provide redacted chains-of-reasoning with confidence bands; stakeholders may request fuller access under NDA.
+
+6. **Inter-Subjective Validation**  
+   *Principle:* Validate claims across independent parties and diverse epistemic point of views.  
+   *Operational corollary:* Include at least one independent third-party check.
+
+7. **Reciprocal Karunā (Compassionate Safeguarding)**  
+   *Principle:* Prioritize harm reduction and reciprocal care in design and operational inferencing.  
+   *Operational corollary:* Stipulate remediation paths and accountable contact points for harms that could occur in operation.
+
+8. **Undecidability Navigation**  
+   *Principle:* Acknowledge formal limits and use conservative fallbacks when undecidability affects safety.  
+   *Operational corollary:* Enforce, as self-enforcing or network-relared cycle capping, temporary pauses or constrained modes when unresolved high-risk undecidable issues are detected.
+
+9. **Probabilistic Vigilance**  
+   *Principle:* Continuously monitor for manipulation and anomalous goals; act conservatively on suspicious signals.  
+   *Operational corollary:* Implement runtime monitors, external verification gates, and bounded action policies for unverified interactions.
