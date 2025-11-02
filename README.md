@@ -1,7 +1,8 @@
 # gdap
+
 # General Declaration for AI Principles (GDAP)
 
-GDAP is a living proposal — not a standard — intended to create a shared language and practical checks for the behaviour of agentic systems. It’s deliberately system-agnostic so the principles apply to present and future architectures. This repo is the canonical archive: manifesto, one-pager, tentative reproducibility checklist, technical appendix, and press assets.
+GDAP is a living proposal — not a standard — intended to create a shared language and practical checks for the behaviour of agentic systems. It’s deliberately system-agnostic so the principles apply to present and future architectures. This repo is the canonical archive: manifesto, one-pager, tentative reproducibility checklist, technical- appendix.
 
 Why this matters:
 
