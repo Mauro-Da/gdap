@@ -1,0 +1,187 @@
+## Other than using model finetuning traces, a tentative GDAP framework could be created using a single LLM and assigning different roles as 'experts', in such a way to create a 'Mixture of Logical Experts' (MoLE)
+
+# 1 — High-level design
+
+* **Goal:** run multiple specialist AIs (agents) through the same interview questions, capture structured outputs, detect agreement/disagreement, and produce a clean human + machine-readable summary with provenance and confidence.
+* **Core components**
+
+  1. **Interviewer** (single or multiple): asks questions, follows up.
+  2. **Expert agents** (n domain experts): each with a clear role/stance (e.g., economist, technologist, skeptic).
+  3. **Fact-checker / Retrieval agent:** checks claims against documents / web / dataset (RAG).
+  4. **Synthesizer (assembler):** creates the first merged summary and points of disagreement.
+  5. **Moderator / Arbiter:** adjudicates contradictions, asks clarifying follow-ups.
+  6. **Parser/Exporter:** enforces JSON schema and prepares final extractive/abstractive summary + provenance.
+
+# 2 — Orchestration patterns
+
+Pick one depending on depth and resources:
+
+* **Round-Robin (simple):** interviewer asks Q1 → all agents respond independently → synthesizer merges → optionally a follow-up round based on disagreements.
+* **Debate (dialectic):** pairs (pro/con) argue; judge picks winners; synthesizer summarizes.
+* **Funnel / Hierarchical:** many agents produce bullets → synthesizer reduces to short paragraphs → second pass with lower temperature for polishing.
+* **Chain (iterative refinement):** agent A produces draft → agent B edits/improves → agent C fact-checks → finalizer outputs.
+
+# 3 — Role/system prompts (templates)
+
+Below are concise templates you can insert as system messages per agent. Keep them short & explicit.
+
+**Interviewer (system):**
+
+```
+You are the Interviewer. Ask one focused question at a time, allow up to two clarifying follow-ups, and collect concise answers from each Expert. After all Experts reply, ask one synthesis prompt to the Synthesizer.
+```
+
+**Expert: (replace role & instructions)**
+
+```
+You are an expert: <ROLE_NAME> (e.g., "Climate Economist"). 
+- Answer the question clearly in ~120-200 words.
+- Provide up to 3 numbered claims (short sentences).
+- For each claim, include a one-line justification and any evidence or data you used.
+- If uncertain, state uncertainty and rate confidence 0-1.
+- Output only JSON matching the provided schema.
+```
+
+**Fact-Checker / RAG:**
+
+```
+You are the Fact-Checker. For each claim provided by Experts, search the supplied documents or knowledge source and mark each as [Supported / Contradicted / Not found]. Provide a short citation or snippet for each decision. Output JSON.
+```
+
+**Synthesizer:**
+
+```
+You are the Synthesizer. Given all Experts' JSON outputs and Fact-Checker results, produce:
+- a 3-sentence executive summary,
+- top 5 consensus claims (ranked),
+- top 3 disagreements (with agents listed),
+- list of evidence-backed claims and unresolved claims.
+Output JSON.
+```
+
+# 4 — Enforce machine-readable outputs (JSON schema)
+
+Require every agent to return a strict JSON object. Example schema (simplified):
+
+```json
+{
+  "agent_id": "string",
+  "role": "string",
+  "answers": [
+    {
+      "question_id": "q1",
+      "text": "short answer text",
+      "claims": [
+        {
+          "id": "c1",
+          "text": "claim sentence",
+          "justification": "1-line reason",
+          "confidence": 0.0-1.0,
+          "evidence_refs": ["doc23", "url..."]
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "temperature": 0.2,
+    "timestamp": "2025-10-27T12:34:56Z"
+  }
+}
+```
+
+Insist the assistant **returns only valid JSON**, nothing else. You can validate with a JSON schema validator and reject nonconforming responses (ask agent to re-output).
+
+# 5 — Aggregation / summarization algorithm (practical)
+
+1. **Validate JSON** from each agent. Reject & re-request if broken.
+2. **Normalize claims:** deduplicate via semantic similarity (embedding-based cosine > 0.88 → group).
+3. **Score each grouped claim:**
+
+   * `support_score` = weighted sum of supporting agents’ confidences.
+   * `fact_score` = proportion Supported by Fact-Checker.
+   * `consensus_score` = function(support_score, fact_score).
+4. **Label**
+
+   * `Established` if consensus_score > threshold (e.g., 0.7) and fact_score > 0.6.
+   * `Contested` if agents disagree/confidence variance high.
+   * `Speculative` if low fact_score and low support.
+5. **Produce outputs**
+
+   * Extractive: top k supported claims with provenance.
+   * Abstractive: feed grouped claims + top evidence + agent quotes to a low-temperature model to produce final prose.
+6. **Detect contradictions:** for groups with semantic overlap but opposite polarity, mark disputes and list agents on each side.
+
+Pseudocode (very short):
+
+```text
+for each claim_group:
+    support = sum(agent.confidence for supporter)/num_agents
+    fact = fact_checker.support_fraction(claim_group)
+    score = 0.6*support + 0.4*fact
+    label = assign_label(score)
+```
+
+# 6 — Practical settings & tactics
+
+* **Temperature:** Expert agents: 0.0–0.3 for factual roles; 0.6–0.9 for ideation/brainstorm roles.
+* **Few-shot:** Give 1–2 example Q→JSON answers to seed structure.
+* **Chain of rounds:** Use 1–2 follow up rounds to resolve contradictions.
+* **RAG:** Always run Fact-Checker against a document set or the web for claims that look factual.
+* **Token limits:** Ask experts to be concise (bulleted claims) to keep aggregation tractable.
+* **Provenance:** Require `evidence_refs` — at minimum: [source id, short snippet]. Keep citations in final output.
+
+# 7 — Evaluation & metrics
+
+* **Factuality rate:** fraction of claims Supported by Fact-Checker.
+* **Consensus index:** mean pairwise semantic agreement among agents.
+* **Novelty:** percent of claims not present in your knowledge base (helps detect hallucination).
+* **Human acceptability:** quick human rating on a 1–5 scale.
+
+# 8 — Example (mini run)
+
+Topic: *“Should cities ban single-use plastic bags?”* — three agents: Pro-ban (environmentalist), Neutral (economist), Skeptic (retailer rep).
+
+**Interviewer Q1:** “Give your short position and up to 3 claims with evidence.”
+
+(Agents would return JSON; here’s a tiny simulated aggregated result.)
+
+Aggregated JSON (example):
+
+```json
+{
+  "executive_summary": "Most agents agree single-use plastic bag bans reduce litter and increase reusable bag adoption; economic impacts vary by demographic and transition support. Fact-checking finds strong evidence for reduced litter in municipal studies but mixed evidence on long-term consumption changes. Key disagreements: distributional costs, effect on low-income households, and substitution effects (paper/ thicker plastics).",
+  "consensus_claims": [
+    {
+      "claim": "Bag bans reduce visible litter in urban environments.",
+      "supporting_agents": ["environmentalist","economist"],
+      "fact_check": "Supported (municipal studies X,Y).",
+      "confidence": 0.85
+    }
+  ],
+  "disagreements": [
+    {
+      "topic": "Net economic burden on low-income households",
+      "pro": ["economist (conditional subsidies)"],
+      "con": ["retailer rep (pass-through costs)"],
+      "notes": "Needs targeted local data."
+    }
+  ]
+}
+```
+
+# 9 — Implementation notes & toolchain
+
+* **Orchestration:** any workflow/orchestration library works (LangChain flows, Airflow, simple scripts). Use a queue for agent calls and a validator for JSON.
+* **Similarity & embeddings:** use vector DB + embeddings to cluster claims (e.g., cosine, thresholding).
+* **Storage:** persist all agent responses + metadata for auditability.
+* **Automation tip:** have a small “retry” policy: if JSON fails validation, allow up to 2 re-asks with explicit error feedback.
+
+# 10 — Best practices & pitfalls
+
+* **Don’t mix roles:** give each agent a single clear role to reduce role-drift.
+* **Guard against leading questions:** keep interviewer neutral to avoid biasing.
+* **Watch for collusion:** if all agents share same system prompt, you'll get homogeneous answers. Diversity of model types/temperatures reduces correlated errors.
+* **Always fact-check high-impact claims** with external sources.
+* **Prefer multi-rounds** for contentious topics rather than a single pass.
+
+-------
