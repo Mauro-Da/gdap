@@ -18,5 +18,12 @@ Proportional precaution: measures scale with capability and societal impact.
 
 Rights-preserving deployment: safeguards must respect privacy, access, and remedy.
 
+
+Governance and Revision
+
+This declaration is a living framework. Revisions are versioned and publicly archived on the official repository.
+Substantive updates are reviewed with public feedback and published as numbered releases.
+Readers are encouraged to cite specific version numbers to ensure clarity.
+
 **License:** Text is licensed under [CC BY 4.0](LICENSE-CONTENT.md).
 
